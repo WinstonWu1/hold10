@@ -1,0 +1,17 @@
+{
+  "name": "Hold10",
+  "short_name": "Hold10",
+  "description": "Hold 10 minutes. Don't place the next bet.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#dff4ec",
+  "icons": [
+    {
+      "src": "/hold10-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

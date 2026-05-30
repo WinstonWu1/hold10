@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #1e293b;
+  background: #f8fafc;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+@keyframes calm-breathe {
+  0%,
+  100% {
+    transform: scale(0.76);
+  }
+  50% {
+    transform: scale(1);
+  }
+}
+
+.calm-breath {
+  animation: calm-breathe 10s ease-in-out infinite;
+}
