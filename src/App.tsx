@@ -8,7 +8,8 @@ type Screen =
   | "tally"
   | "return"
   | "protection"
-  | "room";
+  | "room"
+  | "settings";
 
 type HoldState = {
   cleanStart: number;
@@ -62,19 +63,23 @@ const protectionLists: Record<Country, string[]> = {
   ],
 };
 
-const defaultState: HoldState = {
-  cleanStart: Date.now(),
-  urgesSurvived: 0,
-  manualMoneyProtected: 0,
-  dailyRiskAmount: 100,
-  supportSent: 0,
-  checkins: 0,
-  slipsRecorded: 0,
-  clarityPoints: 0,
-  protectionDone: {},
-  country: "AU",
-  fastMode: true,
-};
+function createDefaultState(): HoldState {
+  return {
+    cleanStart: Date.now(),
+    urgesSurvived: 0,
+    manualMoneyProtected: 0,
+    dailyRiskAmount: 100,
+    supportSent: 0,
+    checkins: 0,
+    slipsRecorded: 0,
+    clarityPoints: 0,
+    protectionDone: {},
+    country: "AU",
+    fastMode: true,
+  };
+}
+
+const defaultState = createDefaultState();
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -114,6 +119,23 @@ function fenceBuilt(state: HoldState) {
   return protectionLists[state.country].filter(
     (item) => state.protectionDone[protectionKey(state.country, item)],
   ).length;
+}
+
+function exportState(state: HoldState) {
+  const payload = {
+    app: "Hold10",
+    exportedAt: new Date().toISOString(),
+    state,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `hold10-progress-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function gardenStage(urges: number) {
@@ -197,6 +219,11 @@ export default function App() {
       ...(typeof patch === "function" ? patch(current) : patch),
     }));
 
+  const resetState = () => {
+    setState(createDefaultState());
+    setScreen("home");
+  };
+
   const protectedLive = liveProtected(state, now);
 
   return (
@@ -238,6 +265,14 @@ export default function App() {
         )}
         {screen === "room" && (
           <LiveHoldRoom state={state} now={now} updateState={updateState} />
+        )}
+        {screen === "settings" && (
+          <Settings
+            state={state}
+            now={now}
+            protectedLive={protectedLive}
+            resetState={resetState}
+          />
         )}
 
         <p className="px-2 pb-2 text-center text-xs leading-relaxed text-slate-500">
@@ -298,6 +333,13 @@ function Home({
           onClick={() => setScreen("room")}
         >
           Live Hold Room
+        </Button>
+        <Button
+          variant="secondary"
+          className="col-span-2"
+          onClick={() => setScreen("settings")}
+        >
+          Settings & Data
         </Button>
       </div>
 
@@ -1042,5 +1084,95 @@ function LiveHoldRoom({
         </div>
       </div>
     </Card>
+  );
+}
+
+function Settings({
+  state,
+  now,
+  protectedLive,
+  resetState,
+}: {
+  state: HoldState;
+  now: number;
+  protectedLive: number;
+  resetState: () => void;
+}) {
+  const [resetArmed, setResetArmed] = useState(false);
+  const supportItems =
+    state.country === "AU"
+      ? ["Gambling Help Online", "1800 858 858", "BetStop self-exclusion"]
+      : ["1-800-GAMBLER", "1-800-MY-RESET", "State self-exclusion programs"];
+
+  return (
+    <>
+      <Card>
+        <h2 className="text-2xl font-black text-slate-950">
+          Settings & Data
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+          Keep your progress portable and keep local control of your data.
+        </p>
+
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <Stat label="Clean time" value={cleanTimeLabel(state.cleanStart, now)} />
+          <Stat label="Protected" value={money.format(protectedLive)} />
+        </div>
+      </Card>
+
+      <Card>
+        <h2 className="text-xl font-black text-slate-950">Data</h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+          Hold10 stores progress only in this browser on this device. The MVP
+          has no account, server sync, or cloud backup.
+        </p>
+
+        <Button className="mt-5 w-full" onClick={() => exportState(state)}>
+          Export progress
+        </Button>
+
+        <Button
+          variant="secondary"
+          className="mt-3 w-full border-red-200 text-red-700 hover:bg-red-50"
+          onClick={() => {
+            if (!resetArmed) {
+              setResetArmed(true);
+              return;
+            }
+            resetState();
+          }}
+        >
+          {resetArmed ? "Confirm reset local data" : "Reset local data"}
+        </Button>
+
+        {resetArmed && (
+          <Button
+            variant="ghost"
+            className="mt-2 w-full"
+            onClick={() => setResetArmed(false)}
+          >
+            Keep my data
+          </Button>
+        )}
+      </Card>
+
+      <Card>
+        <h2 className="text-xl font-black text-slate-950">Support</h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+          Hold10 is a pause tool, not a replacement for qualified help.
+        </p>
+
+        <div className="mt-5 grid gap-3">
+          {supportItems.map((item) => (
+            <div
+              key={item}
+              className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900"
+            >
+              {item}
+            </div>
+          ))}
+        </div>
+      </Card>
+    </>
   );
 }
