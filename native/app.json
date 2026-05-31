@@ -8,6 +8,9 @@
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "com.winstonwu.hold10",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
       "supportsTablet": true
     },
     "android": {
@@ -21,6 +24,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f6c295e3-4ec8-48e2-82e2-68916785b471"
+      }
+    },
+    "owner": "seafoodshop"
   }
 }
