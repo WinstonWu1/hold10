@@ -332,6 +332,14 @@ export default function App() {
           Your Hold10 data stays in this browser on this device.{" "}
           Hold10 is not medical, legal, or financial advice. In crisis, contact
           local emergency services or a qualified support service.
+          <br />
+          <a className="font-semibold text-slate-600" href="/privacy.html">
+            Privacy
+          </a>{" "}
+          ·{" "}
+          <a className="font-semibold text-slate-600" href="/terms.html">
+            Terms
+          </a>
         </p>
       </div>
     </main>
