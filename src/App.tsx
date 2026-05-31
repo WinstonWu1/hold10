@@ -9,7 +9,8 @@ type Screen =
   | "return"
   | "protection"
   | "room"
-  | "settings";
+  | "settings"
+  | "help";
 
 type HoldState = {
   cleanStart: number;
@@ -23,6 +24,13 @@ type HoldState = {
   protectionDone: Record<string, boolean>;
   country: Country;
   fastMode: boolean;
+};
+
+type SupportResource = {
+  title: string;
+  body: string;
+  action: string;
+  href: string;
 };
 
 type UpdateState = (
@@ -60,6 +68,49 @@ const protectionLists: Record<Country, string[]> = {
     "Turn on bank/card gambling blocks if available",
     "Tell one trusted person",
     "Write a 10-minute emergency plan",
+  ],
+};
+
+const supportResources: Record<Country, SupportResource[]> = {
+  AU: [
+    {
+      title: "National Gambling Helpline",
+      body: "Free, confidential gambling support in Australia, available 24/7.",
+      action: "Call 1800 858 858",
+      href: "tel:1800858858",
+    },
+    {
+      title: "Gambling Help Online",
+      body: "Online counselling, information, and support for gambling harm.",
+      action: "Open website",
+      href: "https://www.gamblinghelponline.org.au/",
+    },
+    {
+      title: "BetStop",
+      body: "Register to block yourself from licensed Australian online and phone betting providers.",
+      action: "Open BetStop",
+      href: "https://www.betstop.gov.au/",
+    },
+  ],
+  US: [
+    {
+      title: "National Problem Gambling Helpline",
+      body: "Connect with local support for gambling problems across the United States.",
+      action: "Call 1-800-MY-RESET",
+      href: "tel:+18006973738",
+    },
+    {
+      title: "NCPG Chat",
+      body: "Online support and state-by-state problem gambling resources.",
+      action: "Open NCPG",
+      href: "https://www.ncpgambling.org/help-treatment/",
+    },
+    {
+      title: "Help by State",
+      body: "Find local gambling support options in your state or territory.",
+      action: "Find help",
+      href: "https://www.ncpgambling.org/help-treatment/help-by-state/",
+    },
   ],
 };
 
@@ -272,8 +323,10 @@ export default function App() {
             now={now}
             protectedLive={protectedLive}
             resetState={resetState}
+            setScreen={setScreen}
           />
         )}
+        {screen === "help" && <HelpNow state={state} setScreen={setScreen} />}
 
         <p className="px-2 pb-2 text-center text-xs leading-relaxed text-slate-500">
           Your Hold10 data stays in this browser on this device.{" "}
@@ -340,6 +393,13 @@ function Home({
           onClick={() => setScreen("settings")}
         >
           Settings & Data
+        </Button>
+        <Button
+          variant="secondary"
+          className="col-span-2 border-red-200 text-red-700 hover:bg-red-50"
+          onClick={() => setScreen("help")}
+        >
+          Help Now
         </Button>
       </div>
 
@@ -1087,22 +1147,90 @@ function LiveHoldRoom({
   );
 }
 
+function ResourceCard({ resource }: { resource: SupportResource }) {
+  const isPhone = resource.href.startsWith("tel:");
+
+  return (
+    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+      <h3 className="font-bold text-emerald-950">{resource.title}</h3>
+      <p className="mt-1 text-sm leading-relaxed text-emerald-900">
+        {resource.body}
+      </p>
+      <a
+        className="mt-4 block rounded-2xl bg-emerald-700 px-4 py-3 text-center text-sm font-bold text-white"
+        href={resource.href}
+        rel={isPhone ? undefined : "noreferrer"}
+        target={isPhone ? undefined : "_blank"}
+      >
+        {resource.action}
+      </a>
+    </div>
+  );
+}
+
+function HelpNow({
+  state,
+  setScreen,
+}: {
+  state: HoldState;
+  setScreen: (screen: Screen) => void;
+}) {
+  return (
+    <>
+      <Card>
+        <p className="text-sm font-semibold text-red-700">Help Now</p>
+        <h2 className="mt-2 text-3xl font-black text-slate-950">
+          Get support before the next bet.
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-slate-600">
+          Step away from the betting app, put the phone down if you can, and
+          contact a real support service now. If there is immediate danger, call
+          local emergency services.
+        </p>
+
+        <Button className="mt-5 w-full" onClick={() => setScreen("session")}>
+          Start a 10-minute hold
+        </Button>
+      </Card>
+
+      <Card>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xl font-black text-slate-950">
+            Support resources
+          </h2>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+            {state.country}
+          </span>
+        </div>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+          These links open official support services. Change country in
+          Protection Wall.
+        </p>
+
+        <div className="mt-5 grid gap-3">
+          {supportResources[state.country].map((resource) => (
+            <ResourceCard key={resource.title} resource={resource} />
+          ))}
+        </div>
+      </Card>
+    </>
+  );
+}
+
 function Settings({
   state,
   now,
   protectedLive,
   resetState,
+  setScreen,
 }: {
   state: HoldState;
   now: number;
   protectedLive: number;
   resetState: () => void;
+  setScreen: (screen: Screen) => void;
 }) {
   const [resetArmed, setResetArmed] = useState(false);
-  const supportItems =
-    state.country === "AU"
-      ? ["Gambling Help Online", "1800 858 858", "BetStop self-exclusion"]
-      : ["1-800-GAMBLER", "1-800-MY-RESET", "State self-exclusion programs"];
 
   return (
     <>
@@ -1162,14 +1290,13 @@ function Settings({
           Hold10 is a pause tool, not a replacement for qualified help.
         </p>
 
+        <Button className="mt-5 w-full" onClick={() => setScreen("help")}>
+          Open Help Now
+        </Button>
+
         <div className="mt-5 grid gap-3">
-          {supportItems.map((item) => (
-            <div
-              key={item}
-              className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900"
-            >
-              {item}
-            </div>
+          {supportResources[state.country].map((resource) => (
+            <ResourceCard key={resource.title} resource={resource} />
           ))}
         </div>
       </Card>
