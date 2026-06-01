@@ -330,8 +330,15 @@ export default function App() {
 
         <p className="px-2 pb-2 text-center text-xs leading-relaxed text-slate-500">
           Your Hold10 data stays in this browser on this device.{" "}
-          Hold10 is not medical, legal, or financial advice. In crisis, contact
-          local emergency services or a qualified support service.
+          Hold10 is a self-support pause tool, not a medical, mental health,
+          legal, financial, emergency, crisis, gambling treatment, or monitoring
+          service. It does not diagnose, treat, prevent, or cure any condition,
+          does not monitor you, and cannot contact help for you. It cannot
+          guarantee that gambling, self-harm, financial loss, debt, legal
+          issues, or relapse will be prevented. In immediate danger, call local
+          emergency services now. For gambling, addiction, mental health, legal,
+          debt, or financial support, contact a qualified professional or
+          official support service.
           <br />
           <a className="font-semibold text-slate-600" href="/privacy.html">
             Privacy
@@ -1194,6 +1201,12 @@ function HelpNow({
           Step away from the betting app, put the phone down if you can, and
           contact a real support service now. If there is immediate danger, call
           local emergency services.
+        </p>
+        <p className="mt-3 rounded-2xl bg-red-50 p-4 text-sm font-semibold leading-relaxed text-red-800">
+          Hold10 is not monitored and is not an emergency, crisis, medical,
+          mental health, gambling treatment, legal, or financial service. If you
+          may hurt yourself or someone else, cannot stay safe, or need urgent
+          help, call local emergency services now.
         </p>
 
         <Button className="mt-5 w-full" onClick={() => setScreen("session")}>

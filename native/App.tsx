@@ -2,10 +2,12 @@ import "expo-dev-client";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Animated,
   type DimensionValue,
+  Easing,
   Linking,
   Pressable,
   SafeAreaView,
@@ -14,6 +16,7 @@ import {
   Switch,
   Text,
   TextInput,
+  Vibration,
   View,
 } from "react-native";
 
@@ -57,6 +60,23 @@ type UpdateState = (
 const storageKey = "hold10-native-state";
 const dayMs = 86400000;
 const minuteMs = 60000;
+const breathInMs = 4000;
+const breathOutMs = 6000;
+const breathMinScale = 0.48;
+const breathMaxScale = 1.12;
+
+async function triggerCalmHaptic(inCalmZone: boolean) {
+  try {
+    const Haptics = await import("expo-haptics");
+    await Haptics.impactAsync(
+      inCalmZone
+        ? Haptics.ImpactFeedbackStyle.Medium
+        : Haptics.ImpactFeedbackStyle.Light,
+    );
+  } catch {
+    Vibration.vibrate();
+  }
+}
 
 const triggers = [
   "Boredom",
@@ -178,11 +198,11 @@ function fenceBuilt(state: HoldState) {
 }
 
 function gardenStage(urges: number) {
-  if (urges >= 20) return "Forest";
-  if (urges >= 7) return "Garden";
-  if (urges >= 3) return "Sapling";
-  if (urges >= 1) return "Sprout";
-  return "Seed";
+  if (urges >= 20) return { icon: "🌲", name: "Forest" };
+  if (urges >= 7) return { icon: "🌼", name: "Garden" };
+  if (urges >= 3) return { icon: "🌳", name: "Sapling" };
+  if (urges >= 1) return { icon: "🌿", name: "Sprout" };
+  return { icon: "🌱", name: "Seed" };
 }
 
 function Card({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) {
@@ -217,9 +237,10 @@ function Button({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+function Stat({ icon, label, value }: { icon?: string; label: string; value: string | number }) {
   return (
     <View style={styles.stat}>
+      {icon ? <Text style={styles.statIcon}>{icon}</Text> : null}
       <Text style={styles.statLabel}>{label}</Text>
       <Text style={styles.statValue}>{value}</Text>
     </View>
@@ -355,9 +376,15 @@ export default function App() {
         {screen === "help" && <HelpNow state={state} setScreen={setScreen} />}
 
         <Text style={styles.footer}>
-          Your Hold10 data stays on this device. Hold10 is not medical, legal,
-          or financial advice. In crisis, contact emergency services or a
-          qualified support service.
+          Your Hold10 data stays on this device. Hold10 is a self-support pause
+          tool, not a medical, mental health, legal, financial, emergency,
+          crisis, gambling treatment, or monitoring service. It does not
+          diagnose, treat, prevent, or cure any condition, does not monitor you,
+          and cannot contact help for you. It cannot guarantee that gambling,
+          self-harm, financial loss, debt, legal issues, or relapse will be
+          prevented. In immediate danger, call local emergency services now. For
+          gambling, addiction, mental health, legal, debt, or financial support,
+          contact a qualified professional or official support service.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -487,13 +514,41 @@ function HoldSession({
   const [duration, setDuration] = useState(60);
   const [now, setNow] = useState(Date.now());
   const [feedback, setFeedback] = useState("Stay with the calm rhythm.");
+  const [breathPhase, setBreathPhase] = useState<"ready" | "inhale" | "exhale">("ready");
   const [saved, setSaved] = useState(false);
+  const breathScale = useRef(new Animated.Value(breathMinScale)).current;
+  const breathHoldStartedAt = useRef(0);
+  const autoReleaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearAutoReleaseTimer = () => {
+    if (!autoReleaseTimer.current) return;
+    clearTimeout(autoReleaseTimer.current);
+    autoReleaseTimer.current = null;
+  };
 
   useEffect(() => {
     if (step !== "active") return;
     const id = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(id);
   }, [step]);
+
+  useEffect(() => {
+    if (step !== "active") {
+      clearAutoReleaseTimer();
+      breathScale.stopAnimation();
+      breathScale.setValue(breathMinScale);
+      return;
+    }
+
+    clearAutoReleaseTimer();
+    breathScale.setValue(breathMinScale);
+    setBreathPhase("ready");
+    setFeedback("Press and hold to inhale. The app will release after 4 seconds.");
+    return () => {
+      clearAutoReleaseTimer();
+      breathScale.stopAnimation();
+    };
+  }, [breathScale, step]);
 
   useEffect(() => {
     if (step === "active" && startedAt && now - startedAt >= duration * 1000) {
@@ -518,10 +573,46 @@ function HoldSession({
     setStep("active");
   };
 
-  const tapCalm = () => {
-    const phase = ((Date.now() - startedAt) % 10000) / 10000;
-    const inCalmZone = phase > 0.42 && phase < 0.58;
-    setFeedback(inCalmZone ? "Good. One controlled tap, not a bet." : "Slow down. Wait for the calm zone.");
+  const startInhale = () => {
+    if (breathHoldStartedAt.current) return;
+    breathHoldStartedAt.current = Date.now();
+    clearAutoReleaseTimer();
+    setBreathPhase("inhale");
+    breathScale.stopAnimation();
+    Animated.timing(breathScale, {
+      duration: breathInMs,
+      easing: Easing.inOut(Easing.ease),
+      toValue: breathMaxScale,
+      useNativeDriver: true,
+    }).start();
+    void triggerCalmHaptic(false);
+    autoReleaseTimer.current = setTimeout(() => releaseExhale(true), breathInMs);
+    setFeedback("Inhale slowly. Hold until the app releases into the exhale.");
+  };
+
+  const releaseExhale = (autoRelease = false) => {
+    if (!breathHoldStartedAt.current) return;
+    const heldMs = breathHoldStartedAt.current
+      ? Date.now() - breathHoldStartedAt.current
+      : 0;
+    breathHoldStartedAt.current = 0;
+    clearAutoReleaseTimer();
+    setBreathPhase("exhale");
+    breathScale.stopAnimation();
+    Animated.timing(breathScale, {
+      duration: breathOutMs,
+      easing: Easing.inOut(Easing.ease),
+      toValue: breathMinScale,
+      useNativeDriver: true,
+    }).start();
+    void triggerCalmHaptic(autoRelease || heldMs >= breathInMs * 0.55);
+    setFeedback(
+      autoRelease
+        ? "Exhale now. The app released for you; let the circle settle smaller."
+        : heldMs >= breathInMs * 0.55
+          ? "Release and exhale slowly. Let the urge pass with the shrinking circle."
+        : "Try a longer inhale. Hold until the circle opens, then release.",
+    );
   };
 
   const saveSession = () => {
@@ -577,20 +668,45 @@ function HoldSession({
   }
 
   if (step === "active") {
+    const phaseLabel =
+      breathPhase === "inhale"
+        ? "inhale"
+        : breathPhase === "exhale"
+          ? "exhale"
+          : "hold 4s";
+    const phaseHint =
+      breathPhase === "inhale"
+        ? "Keep holding"
+        : breathPhase === "exhale"
+          ? "Let go and breathe out"
+          : "Press to begin";
+
     return (
       <Card>
         <Text style={styles.greenLabelCenter}>Calm Tap</Text>
         <Text style={styles.timer}>{secondsLeft}s</Text>
-        <View style={styles.progressTrack}>
-          <View style={[styles.blueProgressFill, { width: activeProgress }]} />
+        <View style={[styles.progressTrack, styles.calmProgressTrack]}>
+          <View style={[styles.calmProgressFill, { width: activeProgress }]} />
         </View>
-        <Pressable style={styles.calmCircle} onPress={tapCalm}>
-          <View style={styles.calmInner}>
-            <Text style={styles.calmText}>calm zone</Text>
+        <Pressable
+          style={styles.calmCircle}
+          onPressIn={startInhale}
+          onPressOut={() => releaseExhale(false)}
+        >
+          <View style={styles.calmBoundary} />
+          <Animated.View
+            style={[styles.calmBreath, { transform: [{ scale: breathScale }] }]}
+          />
+          <View style={styles.calmLabelPill}>
+            <Text style={styles.calmPhaseHint}>{phaseHint}</Text>
+            <Text style={styles.calmText}>{phaseLabel}</Text>
           </View>
         </Pressable>
+        <Text style={[styles.breathPhaseCue, breathPhase === "exhale" && styles.breathPhaseCueExhale]}>
+          {breathPhase === "exhale" ? "Exhale now" : "Hold until the inhale completes"}
+        </Text>
         <Text style={styles.bodyText}>
-          Slow deep breath. Tap only when you feel back inside the calm zone.
+          Hold to inhale for 4 seconds. The app releases into a 6 second exhale with a gentle vibration.
         </Text>
         <Text style={styles.feedback}>{feedback}</Text>
       </Card>
@@ -714,9 +830,14 @@ function RecoveryGarden({ state }: { state: HoldState }) {
 
   return (
     <Card>
-      <Text style={styles.greenLabel}>Recovery Garden</Text>
-      <Text style={styles.screenTitle}>{stage}</Text>
-      <Text style={styles.bodyText}>Progress toward Forest: {state.urgesSurvived}/20</Text>
+      <View style={styles.gardenStageRow}>
+        <Text style={styles.gardenStageIcon}>{stage.icon}</Text>
+        <View style={styles.gardenStageCopy}>
+          <Text style={styles.greenLabel}>Recovery Garden</Text>
+          <Text style={styles.screenTitle}>{stage.name}</Text>
+          <Text style={styles.bodyText}>Progress toward Forest: {state.urgesSurvived}/20</Text>
+        </View>
+      </View>
       <View style={styles.progressTrack}>
         <View style={[styles.progressFill, { width: progress }]} />
       </View>
@@ -724,10 +845,10 @@ function RecoveryGarden({ state }: { state: HoldState }) {
         Every Hold10 session waters your recovery. Every trigger you name becomes a weed you pulled.
       </Text>
       <View style={styles.statsGrid}>
-        <Stat label="Watered" value={state.urgesSurvived} />
-        <Stat label="Weeds pulled" value={state.clarityPoints} />
-        <Stat label="Fence built" value={fence} />
-        <Stat label="Stage" value={stage} />
+        <Stat icon="💧" label="Watered" value={state.urgesSurvived} />
+        <Stat icon="🌾" label="Weeds pulled" value={state.clarityPoints} />
+        <Stat icon="🧱" label="Fence built" value={fence} />
+        <Stat icon={stage.icon} label="Stage" value={stage.name} />
       </View>
     </Card>
   );
@@ -911,6 +1032,12 @@ function HelpNow({
         <Text style={styles.screenTitle}>Get support before the next bet.</Text>
         <Text style={styles.bodyText}>
           Step away from the betting app, put the phone down if you can, and contact a real support service now.
+        </Text>
+        <Text style={styles.urgentDisclaimer}>
+          Hold10 is not monitored and is not an emergency, crisis, medical,
+          mental health, gambling treatment, legal, or financial service. If you
+          may hurt yourself or someone else, cannot stay safe, or need urgent
+          help, call local emergency services now.
         </Text>
         <Button label="Start a 10-minute hold" full onPress={() => setScreen("session")} />
       </Card>
@@ -1098,6 +1225,11 @@ const styles = StyleSheet.create({
     minWidth: "47%",
     padding: 16,
   },
+  statIcon: {
+    fontSize: 24,
+    lineHeight: 30,
+    marginBottom: 6,
+  },
   statLabel: {
     color: "#64748b",
     fontSize: 11,
@@ -1109,6 +1241,20 @@ const styles = StyleSheet.create({
     fontSize: 21,
     fontWeight: "900",
     marginTop: 8,
+  },
+  gardenStageRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 14,
+  },
+  gardenStageIcon: {
+    fontSize: 56,
+    lineHeight: 64,
+    textAlign: "center",
+    width: 68,
+  },
+  gardenStageCopy: {
+    flex: 1,
   },
   rowBetween: {
     alignItems: "center",
@@ -1131,6 +1277,15 @@ const styles = StyleSheet.create({
     color: "#b91c1c",
     fontSize: 14,
     fontWeight: "800",
+  },
+  urgentDisclaimer: {
+    backgroundColor: "#fef2f2",
+    borderRadius: 16,
+    color: "#991b1b",
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 21,
+    padding: 14,
   },
   money: {
     color: "#020617",
@@ -1183,13 +1338,16 @@ const styles = StyleSheet.create({
     height: 12,
     overflow: "hidden",
   },
+  calmProgressTrack: {
+    backgroundColor: "#dcfce7",
+  },
   progressFill: {
     backgroundColor: "#34d399",
     borderRadius: 999,
     height: "100%",
   },
-  blueProgressFill: {
-    backgroundColor: "#38bdf8",
+  calmProgressFill: {
+    backgroundColor: "#22c55e",
     borderRadius: 999,
     height: "100%",
   },
@@ -1311,26 +1469,62 @@ const styles = StyleSheet.create({
   calmCircle: {
     alignItems: "center",
     alignSelf: "center",
-    backgroundColor: "#e0f2fe",
+    backgroundColor: "#ecfdf5",
     borderRadius: 140,
     height: 260,
     justifyContent: "center",
     width: 260,
   },
-  calmInner: {
-    alignItems: "center",
-    backgroundColor: "#bbf7d0",
+  calmBoundary: {
     borderColor: "#6ee7b7",
-    borderRadius: 100,
+    borderRadius: 82,
     borderWidth: 4,
-    height: 170,
+    height: 164,
+    position: "absolute",
+    width: 164,
+  },
+  calmBreath: {
+    backgroundColor: "#bbf7d0",
+    borderColor: "#86efac",
+    borderRadius: 98,
+    borderWidth: 1,
+    height: 196,
+    opacity: 0.9,
+    position: "absolute",
+    shadowColor: "#0f766e",
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    width: 196,
+  },
+  calmLabelPill: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.86)",
+    borderRadius: 18,
     justifyContent: "center",
-    width: 170,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+  },
+  calmPhaseHint: {
+    color: "#047857",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1,
+    textTransform: "uppercase",
   },
   calmText: {
     color: "#334155",
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: "900",
+  },
+  breathPhaseCue: {
+    color: "#047857",
+    fontSize: 15,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  breathPhaseCueExhale: {
+    color: "#166534",
+    fontSize: 18,
   },
   feedback: {
     backgroundColor: "#ecfdf5",
