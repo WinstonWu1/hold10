@@ -6,6 +6,7 @@ Status: draft for App Store Connect. Keep Calm Tap UI copy flexible until final 
 
 - App name: Hold10
 - Bundle ID: `com.winstonwu.hold10`
+- App Store Connect app ID: `6775513981`
 - Category: Health & Fitness
 - Secondary category: Lifestyle
 - Content positioning: gambling urge pause and recovery support

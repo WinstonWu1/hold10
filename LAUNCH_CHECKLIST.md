@@ -11,6 +11,7 @@ This checklist tracks the minimum launch work for the web app and native app.
 - Privacy Policy is available at `/privacy.html`.
 - Terms of Use are available at `/terms.html`.
 - Native iOS project is linked to EAS as `@seafoodshop/hold10`.
+- iOS production build `cd15983a-b0b3-40d1-973d-6eb928353c2c` was uploaded to App Store Connect for TestFlight processing.
 - App Store metadata, privacy label, screenshot, and review note draft is in `docs/app-store-prep.md`.
 - TestFlight and production build checklist is in `docs/testflight-production-checklist.md`.
 - Legal and safety disclaimer checklist is in `docs/legal-safety-review.md`.
