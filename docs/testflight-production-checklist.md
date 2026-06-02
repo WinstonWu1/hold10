@@ -43,14 +43,21 @@ Manual iPhone smoke test:
 
 ## Production Build
 
-Current submitted production build:
+Current submitted production build to test:
 
-- EAS build ID: `cd15983a-b0b3-40d1-973d-6eb928353c2c`
-- EAS build logs: `https://expo.dev/accounts/seafoodshop/projects/hold10/builds/cd15983a-b0b3-40d1-973d-6eb928353c2c`
+- EAS build ID: `655baefd-380e-4d4a-bd90-4fac29bc3aa5`
+- Version/build: `1.0.0 (4)`
+- EAS build logs: `https://expo.dev/accounts/seafoodshop/projects/hold10/builds/655baefd-380e-4d4a-bd90-4fac29bc3aa5`
 - App Store Connect app ID: `6775513981`
 - TestFlight URL: `https://appstoreconnect.apple.com/apps/6775513981/testflight/ios`
-- Submission ID: `02353bdb-d36d-4eb2-bfc8-86c839dd5c12`
-- Submission details: `https://expo.dev/accounts/seafoodshop/projects/hold10/submissions/02353bdb-d36d-4eb2-bfc8-86c839dd5c12`
+- Submission ID: `0b7d08aa-37bd-4b98-8c84-b3da3114375b`
+- Submission details: `https://expo.dev/accounts/seafoodshop/projects/hold10/submissions/0b7d08aa-37bd-4b98-8c84-b3da3114375b`
+
+Previous TestFlight baseline:
+
+- Version/build: `1.0.0 (3)`
+- Git tag: `testflight-1.0.0-build3`
+- EAS build ID: `cd15983a-b0b3-40d1-973d-6eb928353c2c`
 
 Run from `native`:
 
