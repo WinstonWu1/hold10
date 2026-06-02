@@ -13,7 +13,6 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   Vibration,
@@ -43,7 +42,6 @@ type HoldState = {
   clarityPoints: number;
   protectionDone: Record<string, boolean>;
   country: Country;
-  fastMode: boolean;
 };
 
 type SupportResource = {
@@ -62,6 +60,7 @@ const dayMs = 86400000;
 const minuteMs = 60000;
 const breathInMs = 4000;
 const breathOutMs = 6000;
+const manualReleaseMinMs = 3000;
 const breathMinScale = 0.48;
 const breathMaxScale = 1.12;
 
@@ -164,7 +163,6 @@ function createDefaultState(): HoldState {
     clarityPoints: 0,
     protectionDone: {},
     country: "AU",
-    fastMode: true,
   };
 }
 
@@ -347,7 +345,7 @@ export default function App() {
           />
         )}
         {screen === "session" && (
-          <HoldSession state={state} updateState={updateState} setScreen={setScreen} />
+          <HoldSession updateState={updateState} setScreen={setScreen} />
         )}
         {screen === "daily" && (
           <DailyHold updateState={updateState} setScreen={setScreen} />
@@ -407,22 +405,14 @@ function Home({
   return (
     <>
       <View style={styles.hero}>
-        <Text style={styles.eyebrow}>HOLD10</Text>
         <Text style={styles.title}>Hold10</Text>
         <Text style={styles.subtitle}>Hold 10 minutes. Do not place the next bet.</Text>
       </View>
 
       <Button label="I feel the urge" full onPress={() => setScreen("session")} />
 
-      <View style={styles.navGrid}>
-        <Button label="Daily Hold" variant="secondary" onPress={() => setScreen("daily")} />
-        <Button label="Recovery Tally" variant="secondary" onPress={() => setScreen("tally")} />
-        <Button label="Protection Wall" variant="secondary" onPress={() => setScreen("protection")} />
-        <Button label="Return Mode" variant="secondary" onPress={() => setScreen("return")} />
-      </View>
-      <Button label="Live Hold Room" variant="secondary" full onPress={() => setScreen("room")} />
-      <Button label="Settings & Data" variant="secondary" full onPress={() => setScreen("settings")} />
-      <Button label="Help Now" variant="danger" full onPress={() => setScreen("help")} />
+      <MoneyCounter state={state} now={now} updateState={updateState} />
+      <RecoveryGarden state={state} />
 
       <View style={styles.statsGrid}>
         <Stat label="Clean time" value={cleanTimeLabel(state.cleanStart, now)} />
@@ -431,8 +421,23 @@ function Home({
         <Stat label="Support taps sent" value={state.supportSent} />
       </View>
 
-      <MoneyCounter state={state} now={now} updateState={updateState} />
-      <RecoveryGarden state={state} />
+      <View style={styles.navGrid}>
+        <View style={styles.navButtonCell}>
+          <Button label="Daily Hold" variant="secondary" full onPress={() => setScreen("daily")} />
+        </View>
+        <View style={styles.navButtonCell}>
+          <Button label="Recovery Tally" variant="secondary" full onPress={() => setScreen("tally")} />
+        </View>
+        <View style={styles.navButtonCell}>
+          <Button label="Protection Wall" variant="secondary" full onPress={() => setScreen("protection")} />
+        </View>
+        <View style={styles.navButtonCell}>
+          <Button label="Return Mode" variant="secondary" full onPress={() => setScreen("return")} />
+        </View>
+      </View>
+      <Button label="Live Hold Room" variant="secondary" full onPress={() => setScreen("room")} />
+      <Button label="Settings & Data" variant="secondary" full onPress={() => setScreen("settings")} />
+      <Button label="Help Now" variant="danger" full onPress={() => setScreen("help")} />
     </>
   );
 }
@@ -496,11 +501,9 @@ function MoneyCounter({
 }
 
 function HoldSession({
-  state,
   updateState,
   setScreen,
 }: {
-  state: HoldState;
   updateState: UpdateState;
   setScreen: (screen: Screen) => void;
 }) {
@@ -566,8 +569,7 @@ function HoldSession({
     : "0%";
 
   const start = () => {
-    const capped = state.fastMode ? Math.min(minutes * 60, 60) : minutes * 60;
-    setDuration(capped);
+    setDuration(minutes * 60);
     setStartedAt(Date.now());
     setNow(Date.now());
     setStep("active");
@@ -592,13 +594,24 @@ function HoldSession({
 
   const releaseExhale = (autoRelease = false) => {
     if (!breathHoldStartedAt.current) return;
-    const heldMs = breathHoldStartedAt.current
-      ? Date.now() - breathHoldStartedAt.current
-      : 0;
+    const heldMs = Date.now() - breathHoldStartedAt.current;
     breathHoldStartedAt.current = 0;
     clearAutoReleaseTimer();
     setBreathPhase("exhale");
     breathScale.stopAnimation();
+
+    if (!autoRelease && heldMs < manualReleaseMinMs) {
+      setBreathPhase("ready");
+      Animated.timing(breathScale, {
+        duration: 220,
+        easing: Easing.out(Easing.ease),
+        toValue: breathMinScale,
+        useNativeDriver: true,
+      }).start();
+      setFeedback("Hold steady a little longer. Small finger movements are okay; stay with the inhale.");
+      return;
+    }
+
     Animated.timing(breathScale, {
       duration: breathOutMs,
       easing: Easing.inOut(Easing.ease),
@@ -658,10 +671,6 @@ function HoldSession({
             ))}
           </View>
         </View>
-        <View style={styles.switchRow}>
-          <Text style={styles.label}>Prototype fast mode</Text>
-          <Switch value={state.fastMode} onValueChange={(fastMode) => updateState({ fastMode })} />
-        </View>
         <Button label="Start Calm Tap" full onPress={start} />
       </Card>
     );
@@ -690,8 +699,10 @@ function HoldSession({
         </View>
         <Pressable
           style={styles.calmCircle}
+          hitSlop={24}
           onPressIn={startInhale}
           onPressOut={() => releaseExhale(false)}
+          pressRetentionOffset={{ bottom: 120, left: 120, right: 120, top: 120 }}
         >
           <View style={styles.calmBoundary} />
           <Animated.View
@@ -1115,17 +1126,10 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 4,
   },
-  eyebrow: {
-    color: "#047857",
-    fontSize: 13,
-    fontWeight: "800",
-    letterSpacing: 4,
-  },
   title: {
     color: "#020617",
     fontSize: 38,
     fontWeight: "900",
-    marginTop: 8,
   },
   subtitle: {
     color: "#475569",
@@ -1202,6 +1206,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+    justifyContent: "center",
+  },
+  navButtonCell: {
+    width: "48%",
   },
   statsGrid: {
     flexDirection: "row",
@@ -1385,6 +1393,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+    justifyContent: "center",
   },
   pickerItem: {
     alignItems: "center",
@@ -1451,14 +1460,6 @@ const styles = StyleSheet.create({
   },
   segmentTextActive: {
     color: "#ffffff",
-  },
-  switchRow: {
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-    borderRadius: 18,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 14,
   },
   timer: {
     color: "#020617",
