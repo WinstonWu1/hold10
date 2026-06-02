@@ -2,6 +2,8 @@
 
 Status: draft for App Store Connect. Keep Calm Tap UI copy flexible until final design approval.
 
+For copy-and-paste field entries, use `docs/app-store-connect-entry-pack.md`.
+
 ## App Information
 
 - App name: Hold10

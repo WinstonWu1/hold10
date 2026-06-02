@@ -13,6 +13,7 @@ This checklist tracks the minimum launch work for the web app and native app.
 - Native iOS project is linked to EAS as `@seafoodshop/hold10`.
 - iOS production build `cd15983a-b0b3-40d1-973d-6eb928353c2c` was uploaded to App Store Connect for TestFlight processing.
 - App Store metadata, privacy label, screenshot, and review note draft is in `docs/app-store-prep.md`.
+- App Store Connect copy-and-paste entry pack is in `docs/app-store-connect-entry-pack.md`.
 - TestFlight and production build checklist is in `docs/testflight-production-checklist.md`.
 - Legal and safety disclaimer checklist is in `docs/legal-safety-review.md`.
 
