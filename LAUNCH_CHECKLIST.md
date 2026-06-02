@@ -32,6 +32,7 @@ This checklist tracks the minimum launch work for the web app and native app.
 - Decide whether the first public release is gambling-focused or broader impulse-control positioning.
 - Confirm App Store metadata and screenshots make clear Hold10 does not offer betting, real-money gaming, lotteries, odds, tips, card counting, gambling account access, or gambling facilitation.
 - Confirm product copy avoids treatment, cure, prevention, diagnosis, monitoring, crisis response, and guarantee claims unless reviewed by counsel and properly supported.
+- Confirm Terms disclose that Hold10 can be changed, paused, removed from sale, discontinued, or no longer maintained, and that users are responsible for managing local data.
 - Review all support and crisis wording for the launch countries.
 - Run a production EAS build and confirm it does not require a development server.
 - Submit production build to TestFlight before App Store review.

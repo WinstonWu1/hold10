@@ -123,6 +123,12 @@ Use this only while all of these remain true:
 
 If any of those change, redo the App Privacy section before submitting a new build.
 
+## Availability And Discontinuation Note
+
+The Terms of Use disclose that Hold10 may be changed, suspended, removed from sale, discontinued, or no longer maintained. If you decide not to continue the app, use App Store Connect's app availability controls instead of leaving a public listing active with known unresolved safety, privacy, legal, or usability issues.
+
+Apple's current App Store Connect flow for removing an app from sale is under `Pricing and Availability` > `Remove App From Sale`. Apple states that removal from all countries or regions can take up to 24 hours to be visible to all users, and that users who previously downloaded the app may continue receiving updates or redownload from purchase history while the necessary contract remains active.
+
 ## Age Rating Questionnaire Notes
 
 Apple's questionnaire wording can vary by region and date, so answer the actual questions on screen. Conservative guidance for the current MVP:

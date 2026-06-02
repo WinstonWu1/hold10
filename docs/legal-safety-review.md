@@ -25,7 +25,17 @@ Hold10 should not be described as medical care, mental health care, therapy, gam
 - Help Now screen says Hold10 is not monitored and is not an emergency, crisis, medical, mental health, gambling treatment, legal, or financial service.
 - Privacy Policy says local recovery data can be sensitive and explains no monitoring or emergency response.
 - Terms of Use say no professional advice, no emergency/crisis reliance, no monitoring, no guarantee, and no reliance for high-risk decisions.
+- Terms of Use say Hold10 may change, be suspended, be removed from sale, or be discontinued, and that users are responsible for managing local data before uninstalling, resetting, or relying on app availability.
+- Terms of Use include "as is/as available" warranty disclaimers and a limitation of liability, while preserving rights that cannot be limited under applicable law.
 - App Store review notes repeat the same safety boundary in plain language.
+
+## If Hold10 Is Paused Or Discontinued
+
+- Remove the app from sale in App Store Connect rather than leaving a known unsafe or unmaintained public listing active.
+- Keep the public Privacy Policy and Terms URL available for a reasonable period if practical.
+- Keep or update the support contact long enough to receive urgent bug, safety, privacy, or takedown messages if practical.
+- Do not promise that users can keep downloading, restoring, or using the app after removal; Apple availability, operating system compatibility, and local device state can affect this.
+- If there is a serious safety, privacy, or legal issue, prioritize removal from sale and a corrective update or public notice over feature work.
 
 ## Copy Rules
 
@@ -47,6 +57,7 @@ Update legal copy, privacy labels, review notes, and release checklist before ad
 ## Source Notes For Review
 
 - Apple App Review Guidelines emphasize app safety, accurate metadata, honest age ratings, clear review notes, and careful handling of health, medical, personal, and sensitive data.
+- Apple App Store Connect Help explains that apps can be removed from sale across all countries or regions and that availability changes may take time to appear to all users.
 - Apple App Privacy Details require accurate disclosure of app and third-party data collection practices; on-device-only processing is treated differently from data transmitted off device.
 - FTC health claim guidance emphasizes truthful, substantiated, non-misleading health-related claims.
 - FTC mobile health app best practices emphasize minimizing unnecessary permissions and protecting sensitive data.
@@ -56,6 +67,7 @@ Update legal copy, privacy labels, review notes, and release checklist before ad
 ## Source Links
 
 - Apple App Review Guidelines: https://developer.apple.com/app-store/review/guidelines/
+- Apple Manage Availability: https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/manage-availability-for-your-app-on-the-app-store/
 - Apple App Privacy Details: https://developer.apple.com/app-store/app-privacy-details/
 - FTC Health Claims: https://www.ftc.gov/business-guidance/advertising-marketing/health-claims
 - FTC Mobile Health App Developers Best Practices: https://www.ftc.gov/business-guidance/resources/mobile-health-app-developers-ftc-best-practices
